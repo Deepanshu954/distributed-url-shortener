@@ -25,6 +25,7 @@ dependency-reduced-pom.xml
 backend/data/
 *.mv.db
 *.trace.db
+*.rdb
 
 # Logs
 *.log

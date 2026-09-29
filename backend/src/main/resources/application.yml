@@ -21,6 +21,10 @@ spring:
       acks: all
       properties:
         max.block.ms: 250
+  data:
+    redis:
+      timeout: ${REDIS_TIMEOUT:500ms}
+      connect-timeout: ${REDIS_CONNECT_TIMEOUT:500ms}
 
 server:
   port: 8080
