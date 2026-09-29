@@ -6,7 +6,7 @@ This directory contains `demo.sh`, which exercises the core distributed function
 
 Start the application with zero Docker setup:
 ```bash
-./run-local.sh
+./scripts/run-local.sh
 ```
 Or run the backend JAR directly:
 ```bash
@@ -16,7 +16,7 @@ java -jar -Dapp.sharding.enabled=false backend/target/url-shortener-2.0.0.jar
 ## Running the Demo
 
 ```bash
-./demo/demo.sh
+./scripts/demo/demo.sh
 ```
 
 ## Tested System Flows

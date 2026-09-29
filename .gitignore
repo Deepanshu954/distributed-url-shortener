@@ -48,8 +48,9 @@ Thumbs.db
 
 # Environment & Local Data
 .env
-.env.local
 load-tests/results/
+scripts/load-tests/results/
+scripts/load-tests/codes.csv
 
 # Documentation & Internal Specifications (Keep local, exclude from remote Git)
 docs/

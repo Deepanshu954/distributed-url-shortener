@@ -55,7 +55,7 @@ git clone https://github.com/Deepanshu9548/distributed-url-shortener-v2.git
 cd "distributed-url-shortener-v2"
 
 # Start the full stack with 1 command
-./run-local.sh
+./scripts/run-local.sh
 ```
 
 - **Frontend Dashboard**: [http://localhost:5173](http://localhost:5173)
@@ -167,7 +167,7 @@ cd frontend && npm test -- --run
 
 ### High-Concurrency Benchmark
 ```bash
-bash load-tests/benchmark.sh
+bash scripts/load-tests/benchmark.sh
 # Results: 20 Snowflake links minted in 0.30s
 # 200 concurrent HTTP 302 redirects with 0% drop rate (p50: ~220ms, avg: ~476ms)
 # Real-time async click telemetry aggregated seamlessly
@@ -213,14 +213,10 @@ distributed-url-shortener/
 │   ├── postgres/                          # Shard replication initialization
 │   ├── prometheus/                        # Metrics scraping configuration
 │   └── grafana/                           # Dashboards & alert provisioning
-├── load-tests/                            # Concurrency benchmarks and JMeter test suites
-│   ├── benchmark.sh                       # Automated concurrency smoke test
-│   ├── redirect.jmx                       # High-throughput redirect stress test
-│   └── write.jmx                          # Snowflake minting stress test
-├── demo/                                  # Smoke test & live demonstration scripts
-│   └── demo.sh                            # 7-step end-to-end API demonstration
-├── run-local.sh                           # 1-Click native startup script
-├── Dockerfile                             # Root container definition
+├── scripts/                               # Operational, testing & verification scripts
+│   ├── run-local.sh                       # 1-Click native zero-docker runner
+│   ├── demo/                              # Smoke test & live demonstration scripts (demo.sh)
+│   └── load-tests/                        # Concurrency benchmarks and JMeter test suites
 └── pom.xml                                # Root Maven aggregator POM
 ```
 
