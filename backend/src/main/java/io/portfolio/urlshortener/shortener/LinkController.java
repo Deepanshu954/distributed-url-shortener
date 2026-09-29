@@ -1,20 +1,17 @@
 package io.portfolio.urlshortener.shortener;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
- * Link management API. 201 on create, 200 on Idempotency-Key replay,
- * 400 validation, 409 alias conflict — bodies via GlobalExceptionHandler.
+ * Public link management API.
+ * Provides frictionless shortening, querying, updating, and deleting of short links.
  */
 @RestController
 @RequestMapping("/api/links")
@@ -32,16 +29,8 @@ public class LinkController {
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
         
-        Long userId = null;
-        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof String principalStr) {
-            try {
-                userId = Long.parseLong(principalStr);
-            } catch (NumberFormatException ignored) {}
-        }
-
         String rid = (requestId == null || requestId.isBlank()) ? UUID.randomUUID().toString() : requestId;
-        ShortenService.CreationResult result = shortenService.create(request, idempotencyKey, rid, userId);
+        ShortenService.CreationResult result = shortenService.create(request, idempotencyKey, rid, null);
         return ResponseEntity
                 .status(result.replayed() ? HttpStatus.OK : HttpStatus.CREATED)
                 .body(result.link());
@@ -50,5 +39,35 @@ public class LinkController {
     @GetMapping("/{shortCode}")
     public LinkMetadataResponse get(@PathVariable String shortCode) {
         return shortenService.getLink(shortCode);
+    }
+
+    @PutMapping("/{shortCode}")
+    public LinkMetadataResponse update(
+            @PathVariable String shortCode,
+            @RequestBody UpdateLinkRequest request,
+            @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
+        String rid = (requestId == null || requestId.isBlank()) ? UUID.randomUUID().toString() : requestId;
+        Instant expiry = request.expiresAt() != null
+                ? request.expiresAt()
+                : (request.ttlSeconds() != null ? Instant.now().plusSeconds(request.ttlSeconds()) : null);
+        return shortenService.updateLink(shortCode, request.longUrl(), expiry, rid);
+    }
+
+    @DeleteMapping("/{shortCode}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @PathVariable String shortCode,
+            @RequestHeader(value = "X-Request-Id", required = false) String requestId) {
+        String rid = (requestId == null || requestId.isBlank()) ? UUID.randomUUID().toString() : requestId;
+        shortenService.deleteLink(shortCode, rid);
+    }
+
+    @GetMapping
+    public Page<LinkMetadataResponse> listRecent(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        return shortenService.listRecentLinks(PageRequest.of(safePage, safeSize));
     }
 }

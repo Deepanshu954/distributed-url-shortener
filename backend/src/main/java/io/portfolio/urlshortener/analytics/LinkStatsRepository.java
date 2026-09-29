@@ -4,19 +4,28 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.Instant;
 
 public interface LinkStatsRepository extends JpaRepository<LinkStats, String> {
+
     @Modifying
-    @Query(value = """
-        INSERT INTO link_stats (short_code, click_count, last_click_at, last_referrer)
-        VALUES (:shortCode, 1, :clickedAt, :referrer)
-        ON CONFLICT (short_code) DO UPDATE
-        SET click_count = link_stats.click_count + 1,
-            last_click_at = :clickedAt,
-            last_referrer = COALESCE(:referrer, link_stats.last_referrer)
-    """, nativeQuery = true)
-    void incrementClickCount(@Param("shortCode") String shortCode,
-                             @Param("clickedAt") Instant clickedAt,
-                             @Param("referrer") String referrer);
+    @Transactional("analyticsTransactionManager")
+    @Query("UPDATE LinkStats s SET s.clickCount = s.clickCount + 1, s.lastClickAt = :clickedAt, s.lastReferrer = COALESCE(:referrer, s.lastReferrer) WHERE s.shortCode = :shortCode")
+    int updateExistingStats(@Param("shortCode") String shortCode,
+                            @Param("clickedAt") Instant clickedAt,
+                            @Param("referrer") String referrer);
+
+    default void incrementClickCount(String shortCode, Instant clickedAt, String referrer) {
+        int updated = updateExistingStats(shortCode, clickedAt, referrer);
+        if (updated == 0) {
+            try {
+                saveAndFlush(new LinkStats(shortCode, 1, clickedAt, referrer));
+            } catch (Exception e) {
+                // If another thread inserted the row concurrently, apply the increment
+                updateExistingStats(shortCode, clickedAt, referrer);
+            }
+        }
+    }
 }

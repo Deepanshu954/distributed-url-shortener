@@ -5,6 +5,7 @@ export interface LinkStats {
   shortCode: string;
   clickCount: number;
   lastClickAt: string | null;
+  lastReferrer: string | null;
 }
 
 export const useLinkStats = (code: string) => {

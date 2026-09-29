@@ -1,5 +1,4 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
-import { useAuthStore } from './auth-store';
+import axios, { AxiosError } from 'axios';
 import { toast } from 'sonner';
 
 export const api = axios.create({
@@ -9,93 +8,20 @@ export const api = axios.create({
   },
 });
 
-api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value?: unknown) => void;
-  reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: Error | null, token: string | null = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
-};
-
 api.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-
-    // Handle Rate Limit
+  (error: AxiosError<{ error?: string }>) => {
+    // Handle Rate Limit (429)
     if (error.response?.status === 429) {
-      const retryAfter = error.response.headers['retry-after'];
-      toast.error(`Rate limited. Try again in ${retryAfter} seconds.`);
+      const retryAfter = error.response.headers['retry-after'] || 'a few';
+      toast.error(`Rate limit exceeded. Please try again in ${retryAfter} seconds.`);
       return Promise.reject(error);
     }
 
-    // Handle 401 Unauthorized
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      if (originalRequest.url?.includes('/api/auth/login') || originalRequest.url?.includes('/api/auth/register')) {
-        return Promise.reject(error);
-      }
-
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => Promise.reject(err));
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        useAuthStore.getState().logout();
-        return Promise.reject(error);
-      }
-
-      try {
-        const { data } = await axios.post(
-          `${api.defaults.baseURL}/api/auth/refresh`,
-          { refreshToken },
-          { headers: { 'Content-Type': 'application/json' } }
-        );
-        
-        const newAccessToken = data.accessToken;
-        const newRefreshToken = data.refreshToken;
-        
-        useAuthStore.getState().setAuth(newAccessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
-        
-        processQueue(null, newAccessToken);
-        
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        processQueue(refreshError as Error, null);
-        useAuthStore.getState().logout();
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    // Handle Service Unavailable (503)
+    if (error.response?.status === 503) {
+      toast.error('System temporarily overloaded or undergoing maintenance. Please retry.');
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

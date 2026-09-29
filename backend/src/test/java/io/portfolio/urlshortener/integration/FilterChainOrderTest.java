@@ -29,11 +29,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "ratelimit.enabled=true",
         "app.kafka.enabled=false",
         "app.node-id=1",
-        "app.jwt.secret=test-secret-min-32-bytes-long-for-hmac",
-        "app.control-db.jdbc-url=jdbc:h2:mem:control_test2;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
-        "app.control-db.username=sa",
-        "app.control-db.password=",
-        "app.control-db.pool-size=2",
+        "app.analytics-db.jdbc-url=jdbc:h2:mem:analytics_test2;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+        "app.analytics-db.username=sa",
+        "app.analytics-db.password=",
+        "app.analytics-db.pool-size=2",
         "app.base-url=http://localhost:8080"
 })
 class FilterChainOrderTest {
@@ -45,13 +44,10 @@ class FilterChainOrderTest {
     private RateLimiter rateLimiter;
 
     @Test
-    void authEndpoint_whenRateLimited_returns429Before401() throws Exception {
+    void endpoint_whenRateLimited_returns429() throws Exception {
         when(rateLimiter.check(anyString(), eq("write")))
                 .thenReturn(RateLimiter.RateLimitResult.denied(5000));
 
-        // POST /api/links requires auth (SecurityConfig).
-        // Without JWT, Spring Security throws 401.
-        // If RateLimitFilter is before Spring Security, it should return 429!
         mockMvc.perform(post("/api/links")
                         .contentType("application/json")
                         .content("{\"longUrl\":\"http://example.com\"}"))

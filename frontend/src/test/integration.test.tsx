@@ -2,96 +2,120 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
-import { useAuthStore } from '@/lib/auth-store';
-import { api } from '@/lib/api';
 import App from '@/App';
 
-const createTestQueryClient = () => new QueryClient({
-  defaultOptions: { queries: { retry: false } },
-});
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
 const renderWithProviders = (ui: React.ReactElement, { route = '/' } = {}) => {
-  window.history.pushState({}, 'Test page', route);
+  window.location.hash = '#' + route;
   return render(
-    <QueryClientProvider client={createTestQueryClient()}>
-      {ui}
-    </QueryClientProvider>
+    <QueryClientProvider client={createTestQueryClient()}>{ui}</QueryClientProvider>
   );
 };
 
 describe('Frontend Integration Tests', () => {
   beforeEach(() => {
-    useAuthStore.getState().logout();
     localStorage.clear();
   });
 
-  it('Login -> Dashboard happy path', async () => {
-    renderWithProviders(<App />, { route: '/login' });
-    
+  it('Landing page shortens URL and renders result card', async () => {
+    renderWithProviders(<App />, { route: '/' });
+
     const user = userEvent.setup();
-    await user.type(screen.getByLabelText(/Email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/Password/i), 'Password123');
-    await user.click(screen.getByRole('button', { name: /Log in/i }));
+    const input = screen.getByPlaceholderText(/Paste your long link here/i);
+    await user.type(input, 'https://github.com/torvalds/linux');
+
+    const shortenBtn = screen.getByRole('button', { name: /^Shorten/i });
+    await user.click(shortenBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Link Shortened Successfully!/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText(/newlink/i).length).toBeGreaterThan(0);
+  });
+
+  it('Dashboard renders links table and click activity', async () => {
+    renderWithProviders(<App />, { route: '/dashboard' });
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /Dashboard/i })).toBeInTheDocument();
     });
 
-    // Check if links are rendered
     await waitFor(() => {
       expect(screen.getByText('link1')).toBeInTheDocument();
     });
+
+    await waitFor(() => {
+      expect(screen.getByText(/10 clicks/i)).toBeInTheDocument();
+    });
   });
 
-  it('Password validator matches backend policy', async () => {
-    renderWithProviders(<App />, { route: '/register' });
+  it('Landing page enforces URL validation', async () => {
+    renderWithProviders(<App />, { route: '/' });
     const user = userEvent.setup();
-    
-    await user.type(screen.getByLabelText(/Email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/^Password/i), 'short'); // too short, no number
-    await user.type(screen.getByLabelText(/Confirm Password/i), 'short');
-    await user.click(screen.getByRole('button', { name: /Sign up/i }));
+
+    const shortenBtn = screen.getByRole('button', { name: /^Shorten/i });
+    await user.click(shortenBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Password must be at least 8 characters/i)).toBeInTheDocument();
+      expect(screen.getByText(/Please enter a web address to shorten/i)).toBeInTheDocument();
     });
   });
 
-  it('Owner-only URL 404 -> redirects to dashboard', async () => {
-    // Mock user being logged in
-    useAuthStore.getState().setAuth('mock-access-token');
-    
-    renderWithProviders(<App />, { route: '/links/unknown' });
-    
-    // We expect a toast error and a redirect to dashboard
+  it('Link details page renders configuration and analytics chart', async () => {
+    renderWithProviders(<App />, { route: '/links/link1' });
+
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Dashboard/i })).toBeInTheDocument();
+      expect(screen.getByText(/Link Configuration/i)).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Click Performance/i)).toBeInTheDocument();
+      expect(screen.getByText(/10/i)).toBeInTheDocument();
     });
   });
-  
-  it('401 during query triggers refresh', async () => {
-    // Set an expired or invalid token initially, but a valid refresh token
-    useAuthStore.getState().setAuth('invalid-token');
-    localStorage.setItem('refreshToken', 'mock-refresh-token');
-    
-    // The MSW handler for /api/me/links will reject 'invalid-token' if it's not starting with Bearer (it does here, but let's just test interceptor logic directly)
-    // Actually the mock returns 401 if no valid auth header. Our api adds "Bearer invalid-token". The MSW just checks for 'Bearer '. 
-    // Let's modify the MSW or just test the interceptor directly.
-    
-    // We can test interceptor by making a raw API call and verifying state changes.
-    api.defaults.headers.common['Authorization'] = 'Bearer trigger-401';
-    
-    // Mocking an endpoint that forces 401 unless token is 'new-mock-access-token'
-    // To keep it simple, we just call the api and see if token refreshes
-    try {
-      await api.get('http://localhost:8080/api/me/links');
-    } catch {
-      // ignore
-    }
-    
-    // In a real E2E we'd see the refresh token used. 
-    // Let's just trust the Axios interceptor logic for now or write a dedicated test.
-    expect(localStorage.getItem('refreshToken')).toBeDefined();
+
+  it('Landing page handles rate limit (429) errors gracefully', async () => {
+    renderWithProviders(<App />, { route: '/' });
+    const user = userEvent.setup();
+
+    const input = screen.getByPlaceholderText(/Paste your long link here/i);
+    await user.type(input, 'https://ratelimit.com');
+
+    const shortenBtn = screen.getByRole('button', { name: /^Shorten/i });
+    await user.click(shortenBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Too many requests/i)).toBeInTheDocument();
+    });
   });
 
+  it('Landing page supports custom alias shortening', async () => {
+    renderWithProviders(<App />, { route: '/' });
+    const user = userEvent.setup();
+
+    const input = screen.getByPlaceholderText(/Paste your long link here/i);
+    await user.type(input, 'https://example.com/custom');
+
+    // Click customize alias toggle button
+    const customizeBtn = screen.getByRole('button', { name: /Custom alias & expiration options/i });
+    await user.click(customizeBtn);
+
+    const aliasInput = screen.getByPlaceholderText(/my-project-v2/i);
+    await user.type(aliasInput, 'my-brand');
+
+    const shortenBtn = screen.getByRole('button', { name: /^Shorten/i });
+    await user.click(shortenBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Link Shortened Successfully!/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByText(/my-brand/i).length).toBeGreaterThan(0);
+  });
 });
+

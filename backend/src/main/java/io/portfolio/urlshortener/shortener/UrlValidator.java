@@ -84,6 +84,17 @@ public class UrlValidator {
         if (isForbiddenIpv6(h)) {
             return true;
         }
+        // Reject single-word local network hostnames without dots (e.g. "metadata", "internal-db")
+        if (!h.contains(".")) {
+            return true;
+        }
+        // Reject decimal integer IPv4 representations (DWORD literals, e.g. 2130706433 -> 127.0.0.1)
+        if (h.matches("^\\d+$")) {
+            return true;
+        }
+        if (h.startsWith(".") || h.endsWith(".") || h.contains("..")) {
+            return true;
+        }
         var m = IPV4_PATTERN.matcher(h);
         if (m.matches()) {
             int o1 = Integer.parseInt(m.group(1));

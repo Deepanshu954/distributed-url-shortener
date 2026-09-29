@@ -7,21 +7,50 @@ export interface LinkItem {
   longUrl: string;
   createdAt: string;
   expiresAt: string | null;
+  customAlias?: boolean;
 }
 
 export interface LinksPage {
-  items: LinkItem[];
-  page: number;
+  content: LinkItem[];
+  number: number;
   size: number;
   totalElements: number;
   totalPages: number;
 }
 
-export const useMyLinks = (page: number = 0, size: number = 20) => {
+// Local history helper for instant guest persistence
+export const getLocalLinks = (): LinkItem[] => {
+  try {
+    return JSON.parse(localStorage.getItem('my_shortened_links') || '[]');
+  } catch {
+    return [];
+  }
+};
+
+export const saveLocalLink = (link: LinkItem) => {
+  try {
+    const list = getLocalLinks();
+    const updated = [link, ...list.filter((l) => l.shortCode !== link.shortCode)].slice(0, 100);
+    localStorage.setItem('my_shortened_links', JSON.stringify(updated));
+  } catch (err) {
+    console.error('Failed to save to localStorage', err);
+  }
+};
+
+export const removeLocalLink = (code: string) => {
+  try {
+    const list = getLocalLinks();
+    localStorage.setItem('my_shortened_links', JSON.stringify(list.filter((l) => l.shortCode !== code)));
+  } catch (err) {
+    console.error('Failed to remove from localStorage', err);
+  }
+};
+
+export const useLinks = (page: number = 0, size: number = 20) => {
   return useQuery({
     queryKey: ['links', page, size],
     queryFn: async () => {
-      const { data } = await api.get<LinksPage>(`/api/me/links?page=${page}&size=${size}`);
+      const { data } = await api.get<LinksPage>(`/api/links?page=${page}&size=${size}`);
       return data;
     },
   });
@@ -47,14 +76,15 @@ export const useCreateLink = () => {
       customAlias?: string;
       ttlSeconds?: number;
       expiresAt?: string;
-      idempotencyKey: string;
+      idempotencyKey?: string;
     }) => {
       const { idempotencyKey, ...rest } = payload;
-      const { data } = await api.post('/api/links', rest, {
-        headers: {
-          'Idempotency-Key': idempotencyKey,
-        },
-      });
+      const headers: Record<string, string> = {};
+      if (idempotencyKey) {
+        headers['Idempotency-Key'] = idempotencyKey;
+      }
+      const { data } = await api.post<LinkItem>('/api/links', rest, { headers });
+      saveLocalLink(data);
       return data;
     },
     onSuccess: () => {
@@ -67,13 +97,17 @@ export const useUpdateLink = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ code, ...payload }: {
+    mutationFn: async ({
+      code,
+      ...payload
+    }: {
       code: string;
       longUrl?: string;
       ttlSeconds?: number;
       expiresAt?: string;
     }) => {
-      const { data } = await api.put(`/api/links/${code}`, payload);
+      const { data } = await api.put<LinkItem>(`/api/links/${code}`, payload);
+      saveLocalLink(data);
       return data;
     },
     onSuccess: (_, variables) => {
@@ -89,6 +123,7 @@ export const useDeleteLink = () => {
   return useMutation({
     mutationFn: async (code: string) => {
       await api.delete(`/api/links/${code}`);
+      removeLocalLink(code);
     },
     onSuccess: (_, code) => {
       queryClient.invalidateQueries({ queryKey: ['links'] });

@@ -13,7 +13,7 @@ import { useState } from 'react';
 export function LinkForm() {
   const createLink = useCreateLink();
   const navigate = useNavigate();
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [idempotencyKey] = useState(() => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : 'key-' + Date.now()));
 
   const {
     register,

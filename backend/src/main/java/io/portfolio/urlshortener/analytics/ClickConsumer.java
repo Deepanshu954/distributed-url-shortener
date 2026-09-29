@@ -20,12 +20,15 @@ public class ClickConsumer {
     }
 
     @KafkaListener(topics = "click-events", groupId = "analytics", autoStartup = "${app.kafka.enabled:false}")
-    @Transactional("controlTransactionManager")
+    @Transactional("analyticsTransactionManager")
     public void consume(ClickEvent event) {
         log.debug("Consumed click event: {}", event.eventId());
         int rows = rawClickEventRepository.insertIgnore(event.eventId(), event.timestamp());
         if (rows > 0) {
-            linkStatsRepository.incrementClickCount(event.shortCode(), event.timestamp(), event.referrer());
+            String safeRef = event.referrer() != null && event.referrer().length() > 1000
+                    ? event.referrer().substring(0, 1000)
+                    : event.referrer();
+            linkStatsRepository.incrementClickCount(event.shortCode(), event.timestamp(), safeRef);
         } else {
             log.debug("Skipped duplicate click event: {}", event.eventId());
         }

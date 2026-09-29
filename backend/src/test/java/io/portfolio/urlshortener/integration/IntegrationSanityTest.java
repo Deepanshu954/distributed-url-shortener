@@ -32,11 +32,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         "ratelimit.enabled=true",
         "app.kafka.enabled=false",
         "app.node-id=1",
-        "app.jwt.secret=test-secret-min-32-bytes-long-for-hmac",
-        "app.control-db.jdbc-url=jdbc:h2:mem:control_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
-        "app.control-db.username=sa",
-        "app.control-db.password=",
-        "app.control-db.pool-size=2",
+        "app.analytics-db.jdbc-url=jdbc:h2:mem:analytics_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+        "app.analytics-db.username=sa",
+        "app.analytics-db.password=",
+        "app.analytics-db.pool-size=2",
         "app.base-url=http://localhost:8080"
 })
 class IntegrationSanityTest {

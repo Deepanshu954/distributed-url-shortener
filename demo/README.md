@@ -1,48 +1,30 @@
-# Demo Script
+# TinyScale System Demo & Smoke Test
 
-This directory contains `demo.sh`, which exercises the core functionality of the URL Shortener end-to-end via `curl`.
+This directory contains `demo.sh`, which exercises the core distributed functionality of the URL Shortener end-to-end via `curl`.
 
 ## Prerequisites
 
-1. The URL Shortener application must be running locally on `http://localhost:8080`.
-2. Redis, PostgreSQL, and Kafka must be available (e.g., via `docker-compose up`).
+Start the application with zero Docker setup:
+```bash
+./run-local.sh
+```
+Or run the backend JAR directly:
+```bash
+java -jar -Dapp.sharding.enabled=false backend/target/url-shortener-2.0.0.jar
+```
 
 ## Running the Demo
 
 ```bash
-./demo.sh
+./demo/demo.sh
 ```
 
-## Expected Output
+## Tested System Flows
 
-```
-=== URL Shortener Demo ===
-
-1. Registering user 'demo'...
-2. Logging in...
-Received JWT token.
-
-3. Creating a short link...
-Created short code: XyZ123
-
-4. Redirecting...
-HTTP Status: 302 (Expected 302)
-
-Waiting 1s for async analytics to process...
-5. Fetching stats...
-Stats: {"shortCode":"XyZ123","totalClicks":1}
-
-6. Updating the link...
-Link updated.
-
-7. Redirecting again (should see new destination)...
-Location: https://example.com/demo-updated
-
-8. Deleting the link...
-Link deleted.
-
-9. Redirecting to deleted link (Expected 404)...
-HTTP Status: 404
-
-=== Demo Complete ===
-```
+1. **Health Check**: Validates `/actuator/health` probe status (`UP`).
+2. **Distributed ID Generation**: Creates a short link with 64-bit Snowflake ID encoded into Base62 (`POST /api/links`).
+3. **Custom Alias Creation**: Shortens link with customized marketing handle.
+4. **302 Redirection**: Queries short code and validates `Location:` HTTP header.
+5. **Asynchronous Click Telemetry**: Validates non-blocking analytical event consumption.
+6. **Cache Invalidation on Update**: Updates destination URL and confirms synchronous cache eviction across all cache layers.
+7. **Deletion & Eviction**: Deletes link and verifies immediate `404 Not Found`.

@@ -21,8 +21,14 @@ pom.xml.next
 release.properties
 dependency-reduced-pom.xml
 
+# Databases & Local H2 State
+backend/data/
+*.mv.db
+*.trace.db
+
 # Logs
 *.log
+backend.log
 
 # IDEs
 .idea/
@@ -45,9 +51,21 @@ Thumbs.db
 .env.local
 load-tests/results/
 
+# Documentation & Internal Specifications (Keep local, exclude from remote Git)
+docs/
+plan/
+deploy/
+db/
+PROGRESS.md
+HANDOFF*.md
+FRONTEND_PROMPT.md
+prompt.md
+suggestions.md
+frontend/HANDOFF.md
+frontend/check_db.js
+
 # AI Assistants
 .claude/
-.claude/settings.json
-.claude/settings.local.json
+.claude/*
+.gemini/
 .gemini/*
-!.gemini/context.md

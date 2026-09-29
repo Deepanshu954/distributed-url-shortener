@@ -1,13 +1,9 @@
-import { HashRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { NavBar } from '@/components/nav-bar';
-import { ProtectedRoute } from '@/components/protected-route';
 import { Toaster } from '@/components/ui/sonner';
 
 import Landing from '@/pages/landing';
-import Login from '@/pages/login';
-import Register from '@/pages/register';
 import Dashboard from '@/pages/dashboard';
-import LinkNew from '@/pages/link-new';
 import LinkDetail from '@/pages/link-detail';
 import RedirectHandler from '@/pages/redirect-handler';
 import NotFound from '@/pages/not-found';
@@ -18,37 +14,40 @@ export default function App() {
   return (
     <ErrorBoundary>
       <HashRouter>
-        <div className="min-h-screen flex flex-col bg-background font-sans antialiased">
+        <div className="min-h-screen flex flex-col bg-background font-sans antialiased selection:bg-indigo-500 selection:text-white">
           <NavBar />
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Landing />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/links/new" element={<LinkNew />} />
-                <Route path="/links/:code" element={<LinkDetail />} />
-              </Route>
-
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/links/new" element={<Navigate to="/" replace />} />
+              <Route path="/links/:code" element={<LinkDetail />} />
               <Route path="/:code" element={<RedirectHandler />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
+          <footer className="py-6 border-t border-border/40 mt-auto text-center text-sm text-muted-foreground bg-muted/20">
+            <div className="container mx-auto px-4">
+              <p className="flex items-center justify-center gap-2 flex-wrap text-xs">
+                <span>TinyScale Distributed Engine</span>
+                <span>•</span>
+                <span>Snowflake 64-bit Sequencer</span>
+                <span>•</span>
+                <span>Murmur3 Consistent Hash Ring</span>
+                <span>•</span>
+                <a
+                  href="https://github.com/Deepanshu9548/distributed-url-shortener-v2"
+                  className="font-medium underline hover:text-foreground"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  GitHub
+                </a>
+              </p>
+            </div>
+          </footer>
+          <Toaster position="top-right" richColors />
         </div>
-        <footer className="py-6 border-t mt-auto text-center text-sm text-muted-foreground">
-          <div className="container mx-auto">
-            <p>
-              Distributed URL Shortener v2 •{' '}
-              <a href="https://github.com/Deepanshu9548/distributed-url-shortener-v2" className="underline hover:text-primary" target="_blank" rel="noreferrer">
-                GitHub
-              </a>
-              {' '}• v{import.meta.env.VITE_APP_VERSION || '1.0.0'}
-            </p>
-          </div>
-        </footer>
-        <Toaster />
       </HashRouter>
     </ErrorBoundary>
   );

@@ -6,12 +6,14 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * JPA is multi-datasource (ADR-010): shard-side scoping lives in
- * {@link ShardJpaConfig}, the auth control DB in
- * {@code io.portfolio.urlshortener.auth.ControlDbConfig}. Keep this class
+ * {@link ShardJpaConfig}, analytics in
+ * {@code io.portfolio.urlshortener.analytics.AnalyticsDbConfig}. Keep this class
  * annotation-light — {@code @WebMvcTest} slices use it as the context root,
  * so anything added here loads in every web slice test.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+        org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration.class
+})
 @ConfigurationPropertiesScan
 public class UrlShortenerApplication {
 

@@ -97,18 +97,18 @@ class RateLimitFilterTest {
     }
 
     @Test
-    void postApiAuth_usesAuthLimiter_and250msRoundsToRetryAfter1() throws Exception {
+    void postApiLinks_usesWriteLimiter_and250msRoundsToRetryAfter1() throws Exception {
         when(limiter.check(anyString(), anyString()))
                 .thenReturn(RateLimitResult.denied(250));
 
-        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/auth/login");
+        MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/links");
         req.setRemoteAddr("9.9.9.9");
         MockHttpServletResponse res = new MockHttpServletResponse();
         MockFilterChain chain = new MockFilterChain();
 
         filter.doFilter(req, res, chain);
 
-        verify(limiter).check("rl:{ip:9.9.9.9}:auth", "auth");
+        verify(limiter).check("rl:{ip:9.9.9.9}:write", "write");
         assertThat(res.getStatus()).isEqualTo(429);
         assertThat(res.getHeader("Retry-After")).isEqualTo("1");
     }
@@ -184,10 +184,7 @@ class RateLimitFilterTest {
     // --- subject extraction -------------------------------------------------
 
     @Test
-    void authenticatedPrincipal_wins_overIp() throws Exception {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(
-                        "alice", "n/a", List.of(new SimpleGrantedAuthority("ROLE_USER"))));
+    void ipBasedLimiting_usesRemoteIp() throws Exception {
         when(limiter.check(anyString(), anyString())).thenReturn(RateLimitResult.allowedResult());
 
         MockHttpServletRequest req = new MockHttpServletRequest("POST", "/api/links");
@@ -197,7 +194,7 @@ class RateLimitFilterTest {
 
         filter.doFilter(req, res, chain);
 
-        verify(limiter).check("rl:{user:alice}:write", "write");
+        verify(limiter).check("rl:{ip:1.2.3.4}:write", "write");
     }
 
     @Test

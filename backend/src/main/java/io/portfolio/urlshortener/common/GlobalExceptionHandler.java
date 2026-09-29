@@ -1,8 +1,5 @@
 package io.portfolio.urlshortener.common;
 
-import io.portfolio.urlshortener.auth.EmailAlreadyExistsException;
-import io.portfolio.urlshortener.auth.InvalidCredentialsException;
-import io.portfolio.urlshortener.auth.InvalidTokenException;
 import io.portfolio.urlshortener.shortener.AliasConflictException;
 import io.portfolio.urlshortener.shortener.InfraUnavailableException;
 import io.portfolio.urlshortener.shortener.NotFoundException;
@@ -13,6 +10,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.transaction.TransactionException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -49,23 +47,14 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.CONFLICT, e.getMessage());
     }
 
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> emailTaken(EmailAlreadyExistsException e) {
-        return body(HttpStatus.CONFLICT, e.getMessage());
-    }
-
-    @ExceptionHandler({InvalidCredentialsException.class, InvalidTokenException.class})
-    public ResponseEntity<Map<String, String>> unauthorized(RuntimeException e) {
-        return body(HttpStatus.UNAUTHORIZED, e.getMessage());
-    }
-
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<Map<String, String>> methodNotAllowed(HttpRequestMethodNotSupportedException e) {
         return body(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
     }
 
     /** 503, never 404: "we don't know" must not look like "it doesn't exist". */
-    @ExceptionHandler({InfraUnavailableException.class, DataAccessException.class, io.portfolio.urlshortener.sharding.ShardUnavailableException.class})
+    @ExceptionHandler({InfraUnavailableException.class, DataAccessException.class, TransactionException.class,
+            io.portfolio.urlshortener.sharding.ShardUnavailableException.class})
     public ResponseEntity<Map<String, String>> unavailable(Exception e) {
         log.warn("infrastructure unavailable: {}", e.getMessage());
         return body(HttpStatus.SERVICE_UNAVAILABLE, "service temporarily unavailable");

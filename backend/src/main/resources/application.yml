@@ -3,8 +3,12 @@ spring:
     name: url-shortener
   profiles:
     default: local
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:mem:shortener;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;NON_KEYWORDS=KEY}
+    username: ${DATABASE_USER:sa}
+    password: ${DATABASE_PASSWORD:}
   flyway:
-    enabled: false # migrations run programmatically per shard (ShardDataSourceConfig) and per control DB
+    enabled: false # migrations run programmatically per shard and for analytics DB
   jpa:
     open-in-view: false
     hibernate:
@@ -12,11 +16,11 @@ spring:
     properties:
       jakarta.persistence.query.timeout: 1000
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
       acks: all
       properties:
-        max.block.ms: 0
+        max.block.ms: 250
 
 server:
   port: 8080
@@ -33,6 +37,12 @@ management:
     health:
       probes:
         enabled: true
+      show-details: always
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH_ENABLED:false}
+    kafka:
+      enabled: ${KAFKA_HEALTH_ENABLED:false}
   metrics:
     distribution:
       percentiles-histogram:
@@ -47,26 +57,11 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   snowflake:
     epoch: 2024-01-01T00:00:00Z
-  # Track C (ADR-010): control DB is off the ring. Compose sets a Postgres
-  # URL; host-side runs point to localhost or an H2 mem URL.
-  control-db:
-    jdbc-url: ${CONTROL_DB_URL:jdbc:postgresql://control-db:5432/control}
-    username: ${CONTROL_DB_USER:control}
-    password: ${CONTROL_DB_PASSWORD:control}
-    pool-size: ${CONTROL_DB_POOL_SIZE:10}
-  # Track C (ADR-009): JWT settings. Secret from env — leave the default
-  # empty so context startup fails only when someone actually needs auth
-  # (SecurityConfig is @ConditionalOnProperty("app.jwt.secret") — an unset
-  # secret disables the whole auth stack, useful for load-test profiles).
-  jwt:
-    secret: ${JWT_SECRET:#{null}}
-    access-ttl: PT15M
-    refresh-ttl: P7D
-    issuer: url-shortener
-  # Track B (ADR-002): consistent-hash sharding. Disabled locally (the
-  # SingleShardRouter stub serves); compose/CI enable via SHARDING_ENABLED=true.
-  # JDBC defaults use the compose network hostnames; host-side runs override
-  # via env (compose maps ports 5433/5434 shard1, 5435/5436 shard2).
+  analytics-db:
+    jdbc-url: ${ANALYTICS_DB_URL:jdbc:h2:mem:analytics;DB_CLOSE_DELAY=-1;MODE=PostgreSQL}
+    username: ${ANALYTICS_DB_USER:sa}
+    password: ${ANALYTICS_DB_PASSWORD:}
+    pool-size: ${ANALYTICS_DB_POOL_SIZE:5}
   sharding:
     enabled: ${SHARDING_ENABLED:false}
     vnodes: 150
@@ -95,29 +90,27 @@ app:
           pool-size: ${SHARD_POOL_SIZE:10}
 
 ratelimit:
-  enabled: true
+  enabled: ${RATELIMIT_ENABLED:false}
   limiters:
     write:    { capacity: 10,  refill-per-minute: 10,  fail-open: false }
     redirect: { capacity: 100, refill-per-minute: 100, fail-open: true }
-    auth:     { capacity: 5,   refill-per-minute: 5,   fail-open: false }
 
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        slidingWindowSize: 20
-        failureRateThreshold: 50
-        waitDurationInOpenState: 5s
-        permittedNumberOfCallsInHalfOpenState: 3
-    instances:
-      redis-cache:
-        baseConfig: default
-      redis-ratelimit:
-        baseConfig: default
-      kafka-publisher:
-        baseConfig: default
-        waitDurationInOpenState: 10s
-      shard-shard1:
-        baseConfig: default
-      shard-shard2:
-        baseConfig: default
+resilience4j.circuitbreaker:
+  configs:
+    default:
+      slidingWindowSize: 20
+      failureRateThreshold: 50
+      waitDurationInOpenState: 5s
+      permittedNumberOfCallsInHalfOpenState: 3
+  instances:
+    redis-cache:
+      baseConfig: default
+    redis-ratelimit:
+      baseConfig: default
+    kafka-publisher:
+      baseConfig: default
+      waitDurationInOpenState: 10s
+    shard-shard1:
+      baseConfig: default
+    shard-shard2:
+      baseConfig: default

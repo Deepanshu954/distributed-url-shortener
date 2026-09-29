@@ -1,28 +1,16 @@
 import { z } from 'zod';
 
-export const loginSchema = z.object({
-  email: z.string().email('Invalid email address').max(320, 'Email too long'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-});
-
-export type LoginFormData = z.infer<typeof loginSchema>;
-
-export const registerSchema = z.object({
-  email: z.string().email('Invalid email address').max(320, 'Email too long'),
-  password: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .max(128, 'Password too long')
-    .regex(/[A-Za-z]/, 'Password must contain at least one letter')
-    .regex(/[0-9]/, 'Password must contain at least one digit'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
-
-export type RegisterFormData = z.infer<typeof registerSchema>;
-
-const restrictedAliases = ['api', 'auth', 'actuator', 'swagger-ui', 'metrics', 'health', 'admin'];
+const restrictedAliases = [
+  'api',
+  'auth',
+  'actuator',
+  'swagger-ui',
+  'swagger',
+  'metrics',
+  'health',
+  'admin',
+  'v3',
+];
 
 export const normalizeUrl = (url: string) => {
   let trimmed = (url || '').trim();
@@ -34,7 +22,8 @@ export const normalizeUrl = (url: string) => {
 };
 
 export const linkSchema = z.object({
-  longUrl: z.string()
+  longUrl: z
+    .string()
     .min(1, 'Please enter a URL to shorten')
     .max(8192, 'URL too long')
     .transform(normalizeUrl)
@@ -46,8 +35,9 @@ export const linkSchema = z.object({
         return false;
       }
     }, 'Invalid website address. Example: google.com or https://example.com'),
-  customAlias: z.string()
-    .regex(/^[0-9a-zA-Z_-]{4,32}$/, 'Alias must be 4-32 characters (alphanumeric, dash, underscore)')
+  customAlias: z
+    .string()
+    .regex(/^[0-9a-zA-Z_-]{4,30}$/, 'Alias must be 4-30 characters (alphanumeric, dash, underscore)')
     .refine((alias) => !restrictedAliases.includes(alias.toLowerCase()), 'This alias is reserved')
     .optional()
     .or(z.literal('')),

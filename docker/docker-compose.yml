@@ -2,11 +2,11 @@ name: url-shortener
 
 x-app-common: &app-common
   build:
-    context: ..
+    context: ../backend
     dockerfile: Dockerfile
   environment: &app-env
     SPRING_PROFILES_ACTIVE: docker
-    JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+    RATELIMIT_ENABLED: "true"
     # Track B: real consistent-hash router + per-shard datasources.
     # JDBC URLs default to the compose hostnames in application.yml.
     SHARDING_ENABLED: "true"

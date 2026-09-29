@@ -21,7 +21,6 @@
         <java.version>25</java.version>
         <maven.compiler.release>25</maven.compiler.release>
         <guava.version>33.3.1-jre</guava.version>
-        <jjwt.version>0.12.6</jjwt.version>
         <resilience4j.version>2.2.0</resilience4j.version>
         <logstash-encoder.version>7.4</logstash-encoder.version>
         <springdoc.version>2.6.0</springdoc.version>
@@ -48,27 +47,10 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Security / JWT -->
+        <!-- Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
         </dependency>
 
         <!-- Data stores -->

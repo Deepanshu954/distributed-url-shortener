@@ -1,10 +1,5 @@
 package io.portfolio.urlshortener.analytics;
 
-import io.portfolio.urlshortener.auth.AuthenticatedUser;
-import io.portfolio.urlshortener.auth.AuthenticatedUserResolver;
-import io.portfolio.urlshortener.auth.LinkIndexRepository;
-import io.portfolio.urlshortener.auth.UserLink;
-import io.portfolio.urlshortener.common.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,37 +23,28 @@ class StatsControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private LinkIndexRepository linkIndexRepository;
-
-    @MockBean
     private LinkStatsRepository linkStatsRepository;
 
     @Test
-    void getStats_owned_returnsStats() throws Exception {
-        AuthenticatedUser user = new AuthenticatedUser(1L, "u@example.com", "jti", Instant.now().plusSeconds(3600));
-        
-        when(linkIndexRepository.findByShortCodeAndUserId("mycode", 1L))
-                .thenReturn(Optional.of(new UserLink("mycode", 1L, Instant.now())));
-                
+    void getStats_existing_returnsStats() throws Exception {
         when(linkStatsRepository.findById("mycode"))
-                .thenReturn(Optional.of(new LinkStats("mycode", 5, Instant.now(), "ref")));
+                .thenReturn(Optional.of(new LinkStats("mycode", 5, Instant.now(), "https://google.com")));
 
-        mockMvc.perform(get("/api/links/mycode/stats")
-                        .requestAttr("auth.currentUser", user))
+        mockMvc.perform(get("/api/links/mycode/stats"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clickCount").value(5))
-                .andExpect(jsonPath("$.shortCode").value("mycode"));
+                .andExpect(jsonPath("$.shortCode").value("mycode"))
+                .andExpect(jsonPath("$.lastReferrer").value("https://google.com"));
     }
 
     @Test
-    void getStats_notOwned_returns404() throws Exception {
-        AuthenticatedUser user = new AuthenticatedUser(2L, "u@example.com", "jti", Instant.now().plusSeconds(3600));
-        
-        when(linkIndexRepository.findByShortCodeAndUserId("othercode", 2L))
+    void getStats_noClicksYet_returnsZeroStats() throws Exception {
+        when(linkStatsRepository.findById("newcode"))
                 .thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/api/links/othercode/stats")
-                        .requestAttr("auth.currentUser", user))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/links/newcode/stats"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clickCount").value(0))
+                .andExpect(jsonPath("$.shortCode").value("newcode"));
     }
 }

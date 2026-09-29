@@ -1,7 +1,5 @@
 package io.portfolio.urlshortener.analytics;
 
-import io.portfolio.urlshortener.auth.LinkIndexRepository;
-import io.portfolio.urlshortener.auth.UserLink;
 import io.portfolio.urlshortener.contracts.ClickEvent;
 import io.portfolio.urlshortener.contracts.LinkEvent;
 import io.portfolio.urlshortener.contracts.UrlCache;
@@ -18,7 +16,6 @@ class ConsumersTest {
     @Mock private RawClickEventRepository rawClickRepo;
     @Mock private LinkStatsRepository statsRepo;
     @Mock private RawLinkEventRepository rawLinkRepo;
-    @Mock private LinkIndexRepository linkIndexRepo;
     @Mock private UrlCache urlCache;
 
     private ClickConsumer clickConsumer;
@@ -28,7 +25,7 @@ class ConsumersTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         clickConsumer = new ClickConsumer(rawClickRepo, statsRepo);
-        linkConsumer = new LinkEventConsumer(rawLinkRepo, linkIndexRepo, urlCache);
+        linkConsumer = new LinkEventConsumer(rawLinkRepo, statsRepo, urlCache);
     }
 
     @Test
@@ -55,22 +52,33 @@ class ConsumersTest {
     @Test
     void linkConsumer_created() {
         when(rawLinkRepo.insertIgnore(any(), any())).thenReturn(1);
-        LinkEvent event = LinkEvent.of(LinkEvent.Type.CREATED, "short2", 123L, "req2");
+        LinkEvent event = LinkEvent.of(LinkEvent.Type.CREATED, "short2", null, "req2");
 
         linkConsumer.consume(event);
 
-        verify(linkIndexRepo).save(any(UserLink.class));
+        verify(rawLinkRepo).insertIgnore(event.eventId(), event.timestamp());
         verify(urlCache, never()).evict(any());
     }
 
     @Test
     void linkConsumer_deleted() {
         when(rawLinkRepo.insertIgnore(any(), any())).thenReturn(1);
-        LinkEvent event = LinkEvent.of(LinkEvent.Type.DELETED, "short3", 123L, "req3");
+        LinkEvent event = LinkEvent.of(LinkEvent.Type.DELETED, "short3", null, "req3");
 
         linkConsumer.consume(event);
 
-        verify(linkIndexRepo).deleteById("short3");
+        verify(rawLinkRepo).insertIgnore(event.eventId(), event.timestamp());
         verify(urlCache).evict("short3");
+    }
+
+    @Test
+    void linkConsumer_updated() {
+        when(rawLinkRepo.insertIgnore(any(), any())).thenReturn(1);
+        LinkEvent event = LinkEvent.of(LinkEvent.Type.UPDATED, "short4", null, "req4");
+
+        linkConsumer.consume(event);
+
+        verify(rawLinkRepo).insertIgnore(event.eventId(), event.timestamp());
+        verify(urlCache).evict("short4");
     }
 }

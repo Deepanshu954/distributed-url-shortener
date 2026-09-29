@@ -45,6 +45,8 @@ class ShortenServiceTest {
     private ShardRouter router;
     @Mock
     private EventPublisher publisher;
+    @Mock
+    private io.portfolio.urlshortener.contracts.UrlCache urlCache;
 
     private ShortenService service;
 
@@ -62,7 +64,7 @@ class ShortenServiceTest {
         lenient().when(idempotencyKeys.save(any(IdempotencyKey.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service = new ShortenService(new SnowflakeIdGenerator(1), new UrlValidator(),
-                links, idempotencyKeys, router, publisher, BASE_URL);
+                links, idempotencyKeys, router, publisher, urlCache, BASE_URL);
     }
 
     private static CreateLinkRequest request(String longUrl) {
@@ -241,5 +243,29 @@ class ShortenServiceTest {
                 2L, "gone", LONG_URL, null, Instant.now().minusSeconds(600),
                 Instant.now().minusSeconds(60), false)));
         assertThatThrownBy(() -> service.getLink("gone")).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void createEvictsCacheToClearAnyPreCreationNegativeCache() {
+        var result = service.create(request(LONG_URL), null, REQUEST_ID, null);
+        verify(urlCache).evict(result.link().shortCode());
+    }
+
+    @Test
+    void updateLinkEvictsCache() {
+        Link existing = new Link(1L, "code1", LONG_URL, null, Instant.now().minusSeconds(10), null, false);
+        when(links.findByShortCode("code1")).thenReturn(Optional.of(existing));
+
+        service.updateLink("code1", "https://newdestination.com", null, REQUEST_ID);
+        verify(urlCache).evict("code1");
+    }
+
+    @Test
+    void deleteLinkEvictsCache() {
+        Link existing = new Link(1L, "code1", LONG_URL, null, Instant.now().minusSeconds(10), null, false);
+        when(links.findByShortCode("code1")).thenReturn(Optional.of(existing));
+
+        service.deleteLink("code1", REQUEST_ID);
+        verify(urlCache).evict("code1");
     }
 }

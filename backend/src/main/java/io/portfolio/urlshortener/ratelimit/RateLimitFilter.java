@@ -10,9 +10,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -114,9 +111,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
         String method = request.getMethod();
 
-        if (path.startsWith("/api/auth/")) {
-            return "auth";
-        }
         if (path.startsWith("/api/links") && WRITE_METHODS.contains(method)) {
             return "write";
         }
@@ -134,24 +128,22 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return false;
     }
 
+    private static final Pattern SAFE_IP_PATTERN = Pattern.compile("^[0-9a-fA-F:.]+$");
+
     private static String subject(HttpServletRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-            String name = auth.getName();
-            if (name != null && !name.isBlank()) {
-                return "user:" + name;
-            }
-        }
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) {
             int comma = xff.indexOf(',');
             String first = (comma < 0 ? xff : xff.substring(0, comma)).trim();
-            if (!first.isEmpty()) {
+            if (!first.isEmpty() && first.length() <= 45 && SAFE_IP_PATTERN.matcher(first).matches()) {
                 return "ip:" + first;
             }
         }
         String remote = request.getRemoteAddr();
-        return "ip:" + (remote == null ? "unknown" : remote);
+        if (remote != null && remote.length() <= 45 && SAFE_IP_PATTERN.matcher(remote).matches()) {
+            return "ip:" + remote;
+        }
+        return "ip:unknown";
     }
 
     private static void write(HttpServletResponse response, int status, String body) throws IOException {

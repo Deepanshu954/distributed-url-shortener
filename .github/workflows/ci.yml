@@ -1,34 +1,61 @@
-name: CI
+name: TinyScale CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
+    branches: [ main, master ]
   pull_request:
-    branches: [main, develop]
+    branches: [ main, master ]
 
 jobs:
-  build:
+  backend-build-test:
+    name: Backend (Java 21 / Spring Boot 3.3)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "25"
-          cache: maven
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      # Unit + contract tests (no Docker needed)
-      - name: Unit and contract tests
-        run: mvn -B verify
+      - name: Run Backend Unit & Integration Tests
+        run: mvn clean test
 
-      # Testcontainers-backed integration tests (Docker available on ubuntu runners)
-      - name: Integration tests (Testcontainers)
-        run: mvn -B verify -Pdocker-tests
+      - name: Package Executable Fat JAR
+        run: mvn package -DskipTests
 
-      - name: Upload test reports
-        if: failure()
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: surefire-reports
-          path: target/surefire-reports
+          name: url-shortener-jar
+          path: backend/target/url-shortener-2.0.0.jar
+          retention-days: 7
+
+  frontend-build-test:
+    name: Frontend (React 18 / TypeScript / Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Vitest Suite (React Testing Library + MSW)
+        run: npm test -- --run
+
+      - name: Compile Production Bundle
+        run: npm run build

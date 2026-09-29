@@ -120,4 +120,39 @@ class LinkControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").exists());
     }
+
+    @Test
+    void updateReturns200WithUpdatedLink() throws Exception {
+        LinkMetadataResponse updated = new LinkMetadataResponse(
+                "abc123", "http://localhost:8080/abc123", "https://updated.com",
+                Instant.parse("2026-07-01T00:00:00Z"), null, false);
+        when(shortenService.updateLink(eq("abc123"), eq("https://updated.com"), any(), anyString()))
+                .thenReturn(updated);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/links/abc123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"longUrl\":\"https://updated.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.shortCode").value("abc123"))
+                .andExpect(jsonPath("$.longUrl").value("https://updated.com"));
+    }
+
+    @Test
+    void deleteReturns204() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/links/abc123"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void listRecentReturnsPage() throws Exception {
+        LinkMetadataResponse item = new LinkMetadataResponse(
+                "abc123", "http://localhost:8080/abc123", LONG_URL,
+                Instant.parse("2026-07-01T00:00:00Z"), null, false);
+        when(shortenService.listRecentLinks(any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of(item)));
+
+        mockMvc.perform(get("/api/links?page=0&size=10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].shortCode").value("abc123"));
+    }
 }

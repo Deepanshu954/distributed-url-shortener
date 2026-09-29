@@ -20,6 +20,8 @@ public record ClickEvent(
         String requestId) {
 
     public static ClickEvent of(String shortCode, String referrer, String userAgent, String requestId) {
-        return new ClickEvent(UUID.randomUUID(), shortCode, Instant.now(), referrer, userAgent, requestId);
+        String safeRef = (referrer != null && referrer.length() > 1000) ? referrer.substring(0, 1000) : referrer;
+        String safeUa = (userAgent != null && userAgent.length() > 500) ? userAgent.substring(0, 500) : userAgent;
+        return new ClickEvent(UUID.randomUUID(), shortCode, Instant.now(), safeRef, safeUa, requestId);
     }
 }
