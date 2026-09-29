@@ -36,7 +36,7 @@ export default function App() {
                 <span>Murmur3 Consistent Hash Ring</span>
                 <span>•</span>
                 <a
-                  href="https://github.com/Deepanshu9548/distributed-url-shortener-v2"
+                  href="https://github.com/Deepanshu954/distributed-url-shortener"
                   className="font-medium underline hover:text-foreground"
                   target="_blank"
                   rel="noreferrer"

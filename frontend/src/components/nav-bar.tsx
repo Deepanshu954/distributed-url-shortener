@@ -56,7 +56,7 @@ export function NavBar() {
 
           <Button variant="ghost" size="icon" asChild className="text-muted-foreground hover:text-foreground">
             <a
-              href="https://github.com/Deepanshu9548/distributed-url-shortener-v2"
+              href="https://github.com/Deepanshu954/distributed-url-shortener"
               target="_blank"
               rel="noreferrer"
               title="GitHub Repository"

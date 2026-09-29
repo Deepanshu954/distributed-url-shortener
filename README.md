@@ -1,12 +1,12 @@
 # TinyScale — Distributed URL Shortener & Analytics Engine
 
-[![CI](https://github.com/Deepanshu9548/distributed-url-shortener-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/Deepanshu9548/distributed-url-shortener-v2/actions)
+[![CI](https://github.com/Deepanshu954/distributed-url-shortener/actions/workflows/ci.yml/badge.svg)](https://github.com/Deepanshu954/distributed-url-shortener/actions)
 [![Java](https://img.shields.io/badge/Java-17%2B%20%7C%2021%2B%20%7C%2025-orange?logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-18.3-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Swagger](https://img.shields.io/badge/OpenAPI%203.0-Swagger%20UI-blue?logo=swagger)](http://localhost:8080/swagger-ui/index.html)
-[![Tests](https://img.shields.io/badge/Tests-235%20Backend%20%2B%20Vitest%20Passed-emerald)](https://github.com/Deepanshu9548/distributed-url-shortener-v2)
+[![Tests](https://img.shields.io/badge/Tests-235%20Backend%20%2B%20Vitest%20Passed-emerald)](https://github.com/Deepanshu954/distributed-url-shortener)
 [![Cost](https://img.shields.io/badge/Deployment%20Cost-%240.00%20(Free%20Tier)-success)](#-zero-cost-0-cloud-deployment)
 
 **TinyScale** is an enterprise-grade, distributed URL shortening and real-time link analytics platform designed for extreme read throughput, high availability, and horizontal scalability. Built with a distributed systems architecture featuring **Twitter Snowflake 64-bit ID generation**, **Murmur3 Consistent Hashing with virtual nodes**, **Anti-Stampede Cache-Aside with Redis mutex locks**, and an **asynchronous click telemetry pipeline**.
@@ -51,8 +51,8 @@ You can boot the entire full-stack application (Backend + Frontend) in seconds w
 
 ```bash
 # Clone repository
-git clone https://github.com/Deepanshu9548/distributed-url-shortener-v2.git
-cd "distributed-url-shortener-v2"
+git clone https://github.com/Deepanshu954/distributed-url-shortener.git
+cd "distributed-url-shortener"
 
 # Start the full stack with 1 command
 ./scripts/run-local.sh
