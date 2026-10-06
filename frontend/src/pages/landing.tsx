@@ -27,6 +27,7 @@ import { api } from '@/lib/api';
 import { normalizeUrl } from '@/lib/validators';
 import { getLocalLinks, saveLocalLink, type LinkItem } from '@/hooks/use-links';
 import { QRCodeSVG } from 'qrcode.react';
+import { getDirectShortUrl, formatShortUrlDisplay } from '@/lib/short-url';
 
 const formSchema = z.object({
   longUrl: z
@@ -81,20 +82,12 @@ export default function Landing() {
     },
   });
 
-  const getFullShortUrl = (code: string) => {
-    const origin = window.location.origin;
-    const pathname = window.location.pathname.endsWith('/')
-      ? window.location.pathname
-      : `${window.location.pathname}/`;
-    return `${origin}${pathname}#/${code}`;
-  };
-
   const handleCopy = (code: string) => {
-    const shortUrl = getFullShortUrl(code);
+    const shortUrl = getDirectShortUrl(code, createdLink?.shortUrl);
     navigator.clipboard.writeText(shortUrl).then(
       () => {
         setCopiedCode(code);
-        toast.success('Short link copied to clipboard!');
+        toast.success('Direct short link copied to clipboard!');
         setTimeout(() => setCopiedCode(null), 2500);
       },
       () => toast.error('Failed to copy to clipboard')
@@ -284,12 +277,12 @@ export default function Landing() {
                   </div>
                   <div className="overflow-hidden">
                     <a
-                      href={getFullShortUrl(createdLink.shortCode)}
+                      href={getDirectShortUrl(createdLink.shortCode, createdLink.shortUrl)}
                       target="_blank"
                       rel="noreferrer"
                       className="font-bold text-lg text-primary hover:underline flex items-center gap-1.5 truncate"
                     >
-                      <span className="truncate">{window.location.host}/#/{createdLink.shortCode}</span>
+                      <span className="truncate">{formatShortUrlDisplay(createdLink.shortCode, createdLink.shortUrl)}</span>
                       <ExternalLink className="h-4 w-4 shrink-0 opacity-70" />
                     </a>
                     <p className="text-xs text-muted-foreground truncate" title={createdLink.longUrl}>
@@ -332,7 +325,7 @@ export default function Landing() {
                   <div className="p-3 bg-white rounded-lg shadow-md">
                     <QRCodeSVG
                       ref={qrRef}
-                      value={getFullShortUrl(createdLink.shortCode)}
+                      value={getDirectShortUrl(createdLink.shortCode, createdLink.shortUrl)}
                       size={180}
                       level="H"
                       includeMargin
@@ -373,12 +366,12 @@ export default function Landing() {
                   >
                     <div className="flex flex-col overflow-hidden mr-3">
                       <a
-                        href={getFullShortUrl(link.shortCode)}
+                        href={getDirectShortUrl(link.shortCode, link.shortUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="font-semibold text-primary text-sm hover:underline flex items-center gap-1.5 truncate"
                       >
-                        <span className="truncate">{window.location.host}/#/{link.shortCode}</span>
+                        <span className="truncate">{formatShortUrlDisplay(link.shortCode, link.shortUrl)}</span>
                         <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
                       </a>
                       <span className="text-xs text-muted-foreground truncate mt-0.5" title={link.longUrl}>

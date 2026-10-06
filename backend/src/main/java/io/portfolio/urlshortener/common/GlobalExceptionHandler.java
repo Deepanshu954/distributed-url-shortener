@@ -37,6 +37,16 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.BAD_REQUEST, message);
     }
 
+    @ExceptionHandler(io.portfolio.urlshortener.shortener.UnauthorizedException.class)
+    public ResponseEntity<Map<String, String>> unauthorized(io.portfolio.urlshortener.shortener.UnauthorizedException e) {
+        return body(HttpStatus.FORBIDDEN, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> illegalArgument(IllegalArgumentException e) {
+        return body(HttpStatus.BAD_REQUEST, e.getMessage() != null ? e.getMessage() : "invalid argument");
+    }
+
     @ExceptionHandler({NotFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<Map<String, String>> notFound(Exception e) {
         return body(HttpStatus.NOT_FOUND, "not found");

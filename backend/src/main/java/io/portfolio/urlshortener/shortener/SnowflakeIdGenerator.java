@@ -85,4 +85,18 @@ public class SnowflakeIdGenerator {
         }
         return now;
     }
+
+    /**
+     * Mints the next ID and encodes it into a compact Base62 short code (default length 5).
+     */
+    public String nextCode() {
+        return nextCode(5);
+    }
+
+    /**
+     * Mints the next ID and encodes it into a Base62 short code of specified length (e.g. 5 up to 11).
+     */
+    public String nextCode(int length) {
+        return Base62.encode(nextId(), length);
+    }
 }

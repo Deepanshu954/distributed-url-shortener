@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS links (
     short_code      VARCHAR(32)   NOT NULL,               -- Base62 code or custom alias; shard routing key
     long_url        VARCHAR(8192) NOT NULL,               -- max length frozen in ADR-011
     user_id         BIGINT,                               -- nullable guest/optional client id
+    manage_token    VARCHAR(64),                          -- authorization secret for mutation/deletion (IDOR protection)
     created_at      TIMESTAMP WITH TIME ZONE   NOT NULL DEFAULT now(),
     expires_at      TIMESTAMP WITH TIME ZONE,                          -- NULL = never expires
     is_custom_alias BOOLEAN       NOT NULL DEFAULT FALSE

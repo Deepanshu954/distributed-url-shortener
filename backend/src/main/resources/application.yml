@@ -19,10 +19,19 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
       acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         max.block.ms: 250
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "io.portfolio.urlshortener.*"
   data:
     redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       timeout: ${REDIS_TIMEOUT:500ms}
       connect-timeout: ${REDIS_CONNECT_TIMEOUT:500ms}
 
@@ -59,6 +68,8 @@ app:
     enabled: ${KAFKA_ENABLED:false}
   node-id: ${NODE_ID:1}
   base-url: ${APP_BASE_URL:http://localhost:8080}
+  shortener:
+    code-length: ${CODE_LENGTH:5}  # Configurable snowflake short-code size (default 5, easily increasable to 6-11 in future)
   snowflake:
     epoch: 2024-01-01T00:00:00Z
   analytics-db:

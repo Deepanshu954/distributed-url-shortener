@@ -10,6 +10,14 @@ x-app-common: &app-common
     # Track B: real consistent-hash router + per-shard datasources.
     # JDBC URLs default to the compose hostnames in application.yml.
     SHARDING_ENABLED: "true"
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    KAFKA_BOOTSTRAP: kafka:19092
+    KAFKA_ENABLED: "true"
+    ANALYTICS_DB_URL: jdbc:postgresql://control-db:5432/shortener
+    ANALYTICS_DB_USER: shortener
+    ANALYTICS_DB_PASSWORD: shortener
+    APP_BASE_URL: http://localhost
   depends_on:
     shard1-primary: { condition: service_healthy }
     shard1-replica: { condition: service_healthy }
@@ -178,6 +186,13 @@ services:
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     depends_on: [prometheus]
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    ports: ["5173:3000"]
+    depends_on:
+      - nginx
     networks: [shortener-net]
 
 networks:

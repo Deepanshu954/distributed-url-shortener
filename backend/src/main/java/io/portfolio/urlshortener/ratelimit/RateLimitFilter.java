@@ -131,6 +131,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private static final Pattern SAFE_IP_PATTERN = Pattern.compile("^[0-9a-fA-F:.]+$");
 
     private static String subject(HttpServletRequest request) {
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            String clean = realIp.trim();
+            if (clean.length() <= 45 && SAFE_IP_PATTERN.matcher(clean).matches()) {
+                return "ip:" + clean;
+            }
+        }
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) {
             int comma = xff.indexOf(',');

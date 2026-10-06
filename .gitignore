@@ -71,3 +71,6 @@ frontend/check_db.js
 .claude/*
 .gemini/
 .gemini/*
+.agent_memory/
+.agent_memory/*
+

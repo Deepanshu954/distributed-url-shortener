@@ -67,4 +67,27 @@ class Base62Test {
     void decodeRejectsOverflow() {
         assertThatThrownBy(() -> Base62.decode("ZZZZZZZZZZZZZ")).isInstanceOf(ArithmeticException.class);
     }
+
+    @Test
+    void fixedLengthEncodingProducesExactLength() {
+        assertThat(Base62.encode(12345L, 5)).hasSize(5).matches("[0-9a-zA-Z]{5}");
+        assertThat(Base62.encode(0L, 5)).isEqualTo("00000");
+        assertThat(Base62.encode(987654321L, 6)).hasSize(6).matches("[0-9a-zA-Z]{6}");
+        assertThat(Base62.encode(100L, 7)).hasSize(7).matches("[0-9a-zA-Z]{7}");
+    }
+
+    @Test
+    void fixedLengthEncodingDispersion() {
+        // Consecutive inputs produce distinct non-clustered 5-character codes
+        String code1 = Base62.encode(1000L, 5);
+        String code2 = Base62.encode(1001L, 5);
+        assertThat(code1).isNotEqualTo(code2);
+        assertThat(code1).hasSize(5);
+        assertThat(code2).hasSize(5);
+    }
+
+    @Test
+    void fixedLengthLengthGreaterThan10DelegatesToStandard() {
+        assertThat(Base62.encode(3844L, 11)).isEqualTo(Base62.encode(3844L));
+    }
 }

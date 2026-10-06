@@ -20,8 +20,8 @@ public class NoopPublisher implements EventPublisher {
     private static final Logger log = LoggerFactory.getLogger(NoopPublisher.class);
     private static final int BATCH_SIZE = 100;
 
-    private final io.portfolio.urlshortener.analytics.ClickConsumer clickConsumer;
-    private final io.portfolio.urlshortener.analytics.LinkEventConsumer linkEventConsumer;
+    private final io.portfolio.urlshortener.events.ClickConsumer clickConsumer;
+    private final io.portfolio.urlshortener.events.LinkEventConsumer linkEventConsumer;
 
     private final ConcurrentLinkedQueue<ClickEvent> clickBuffer = new ConcurrentLinkedQueue<>();
     private final ExecutorService linkWorker = Executors.newSingleThreadExecutor(r -> {
@@ -37,8 +37,8 @@ public class NoopPublisher implements EventPublisher {
     });
 
     public NoopPublisher(
-            org.springframework.beans.factory.ObjectProvider<io.portfolio.urlshortener.analytics.ClickConsumer> clickConsumer,
-            org.springframework.beans.factory.ObjectProvider<io.portfolio.urlshortener.analytics.LinkEventConsumer> linkEventConsumer) {
+            org.springframework.beans.factory.ObjectProvider<io.portfolio.urlshortener.events.ClickConsumer> clickConsumer,
+            org.springframework.beans.factory.ObjectProvider<io.portfolio.urlshortener.events.LinkEventConsumer> linkEventConsumer) {
         this.clickConsumer = clickConsumer.getIfAvailable();
         this.linkEventConsumer = linkEventConsumer.getIfAvailable();
 

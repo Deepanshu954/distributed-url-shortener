@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,7 +81,9 @@ class RedisUrlCacheTest {
     @Test
     void putWritesWithGivenTtl() {
         cache.put("abc", "https://example.com", Duration.ofMinutes(10));
-        verify(valueOps).set("url:abc", "https://example.com", Duration.ofMinutes(10));
+        org.mockito.ArgumentCaptor<Duration> captor = org.mockito.ArgumentCaptor.forClass(Duration.class);
+        verify(valueOps).set(eq("url:abc"), eq("https://example.com"), captor.capture());
+        assertThat(captor.getValue()).isBetween(Duration.ofMinutes(9), Duration.ofMinutes(11));
     }
 
     @Test

@@ -1,0 +1,38 @@
+package io.portfolio.urlshortener.events;
+
+import io.portfolio.urlshortener.analytics.repository.LinkStatsRepository;
+import io.portfolio.urlshortener.analytics.repository.RawClickEventRepository;
+import io.portfolio.urlshortener.contracts.ClickEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+@Component
+public class ClickConsumer {
+    private static final Logger log = LoggerFactory.getLogger(ClickConsumer.class);
+
+    private final RawClickEventRepository rawClickEventRepository;
+    private final LinkStatsRepository linkStatsRepository;
+
+    public ClickConsumer(RawClickEventRepository rawClickEventRepository, LinkStatsRepository linkStatsRepository) {
+        this.rawClickEventRepository = rawClickEventRepository;
+        this.linkStatsRepository = linkStatsRepository;
+    }
+
+    @KafkaListener(topics = "click-events", groupId = "analytics", autoStartup = "${app.kafka.enabled:false}")
+    @Transactional("analyticsTransactionManager")
+    public void consume(ClickEvent event) {
+        log.debug("Consumed click event: {}", event.eventId());
+        int rows = rawClickEventRepository.insertIgnore(event.eventId(), event.timestamp());
+        if (rows > 0) {
+            String safeRef = event.referrer() != null && event.referrer().length() > 1000
+                    ? event.referrer().substring(0, 1000)
+                    : event.referrer();
+            linkStatsRepository.incrementClickCount(event.shortCode(), event.timestamp(), safeRef);
+        } else {
+            log.debug("Skipped duplicate click event: {}", event.eventId());
+        }
+    }
+}

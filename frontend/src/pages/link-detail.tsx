@@ -11,6 +11,7 @@ import { ArrowLeft, ExternalLink, Copy, Check, Trash2, QrCode, Download } from '
 import { toast } from 'sonner';
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { getDirectShortUrl, formatShortUrlDisplay } from '@/lib/short-url';
 
 export default function LinkDetail() {
   const { code } = useParams<{ code: string }>();
@@ -54,15 +55,7 @@ export default function LinkDetail() {
     );
   }
 
-  const getFullShortUrl = (shortCode: string) => {
-    const origin = window.location.origin;
-    const pathname = window.location.pathname.endsWith('/')
-      ? window.location.pathname
-      : `${window.location.pathname}/`;
-    return `${origin}${pathname}#/${shortCode}`;
-  };
-
-  const shortUrl = getFullShortUrl(link.shortCode);
+  const shortUrl = getDirectShortUrl(link.shortCode, link.shortUrl);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shortUrl).then(
@@ -137,7 +130,7 @@ export default function LinkDetail() {
           </Button>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold font-mono tracking-tight">{window.location.host}/#/{link.shortCode}</h1>
+              <h1 className="text-2xl font-bold font-mono tracking-tight">{formatShortUrlDisplay(link.shortCode, link.shortUrl)}</h1>
               {link.customAlias && (
                 <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
                   Custom Alias

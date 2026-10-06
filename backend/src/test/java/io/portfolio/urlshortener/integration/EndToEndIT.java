@@ -1,6 +1,6 @@
 package io.portfolio.urlshortener.integration;
 
-import io.portfolio.urlshortener.analytics.LinkStatsRepository;
+import io.portfolio.urlshortener.analytics.repository.LinkStatsRepository;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

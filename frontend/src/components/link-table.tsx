@@ -7,26 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Copy, Trash2, ExternalLink, Check, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getDirectShortUrl } from '@/lib/short-url';
 
 function LinkRow({ item, isLocal }: { item: LinkItem; isLocal?: boolean }) {
   const { data: stats } = useLinkStats(item.shortCode);
   const deleteMutation = useDeleteLink();
   const [copied, setCopied] = useState(false);
 
-  const getFullShortUrl = (code: string) => {
-    const origin = window.location.origin;
-    const pathname = window.location.pathname.endsWith('/')
-      ? window.location.pathname
-      : `${window.location.pathname}/`;
-    return `${origin}${pathname}#/${code}`;
-  };
-
   const handleCopy = () => {
-    const shortUrl = getFullShortUrl(item.shortCode);
+    const shortUrl = getDirectShortUrl(item.shortCode, item.shortUrl);
     navigator.clipboard.writeText(shortUrl).then(
       () => {
         setCopied(true);
-        toast.success('Copied to clipboard');
+        toast.success('Direct short link copied to clipboard');
         setTimeout(() => setCopied(false), 2000);
       },
       () => toast.error('Failed to copy')

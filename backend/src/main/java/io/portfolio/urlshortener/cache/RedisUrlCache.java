@@ -92,7 +92,11 @@ public class RedisUrlCache implements UrlCache {
     @Override
     public void put(String shortCode, String longUrl, Duration ttl) {
         try {
-            circuitBreaker.executeRunnable(() -> redis.opsForValue().set(KEY_PREFIX + shortCode, longUrl, ttl));
+            double jitter = java.util.concurrent.ThreadLocalRandom.current().nextDouble(0.9, 1.1);
+            Duration effectiveTtl = (ttl != null && !ttl.isZero() && !ttl.isNegative())
+                    ? Duration.ofMillis((long) (ttl.toMillis() * jitter))
+                    : ttl;
+            circuitBreaker.executeRunnable(() -> redis.opsForValue().set(KEY_PREFIX + shortCode, longUrl, effectiveTtl));
         } catch (CallNotPermittedException e) {
             countFallback();
         } catch (RuntimeException e) {
