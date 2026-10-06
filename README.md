@@ -1,17 +1,18 @@
 # TinyScale — Distributed URL Shortener & Analytics Engine
 
 [![CI](https://github.com/Deepanshu954/distributed-url-shortener/actions/workflows/ci.yml/badge.svg)](https://github.com/Deepanshu954/distributed-url-shortener/actions)
+[![Deploy](https://github.com/Deepanshu954/distributed-url-shortener/actions/workflows/deploy.yml/badge.svg)](https://github.com/Deepanshu954/distributed-url-shortener/actions)
+[![Live Demo](https://img.shields.io/badge/Demo-GitHub%20Pages-blueviolet?logo=github)](https://deepanshu954.github.io/distributed-url-shortener/)
+[![Release](https://img.shields.io/github/v/release/Deepanshu954/distributed-url-shortener?color=purple&logo=github)](https://github.com/Deepanshu954/distributed-url-shortener/releases/tag/v2.0.0)
 [![Java](https://img.shields.io/badge/Java-17%2B%20%7C%2021%2B%20%7C%2025-orange?logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-18.3-blue?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Swagger](https://img.shields.io/badge/OpenAPI%203.0-Swagger%20UI-blue?logo=swagger)](http://localhost:8080/swagger-ui/index.html)
-[![Tests](https://img.shields.io/badge/Tests-235%20Backend%20%2B%20Vitest%20Passed-emerald)](https://github.com/Deepanshu954/distributed-url-shortener)
-[![Cost](https://img.shields.io/badge/Deployment%20Cost-%240.00%20(Free%20Tier)-success)](#-zero-cost-0-cloud-deployment)
+[![Tests](https://img.shields.io/badge/Tests-243%20Backend%20%2B%20Vitest%20Passed-emerald)](https://github.com/Deepanshu954/distributed-url-shortener)
 
-**TinyScale** is an enterprise-grade, distributed URL shortening and real-time link analytics platform designed for extreme read throughput, high availability, and horizontal scalability. Built with a distributed systems architecture featuring **Twitter Snowflake 64-bit ID generation**, **Murmur3 Consistent Hashing with virtual nodes**, **Anti-Stampede Cache-Aside with Redis mutex locks**, and an **asynchronous click telemetry pipeline**.
+**TinyScale** is an enterprise-grade, distributed URL shortening and real-time link analytics platform designed for extreme read throughput, high availability, and horizontal scalability. Built with a distributed systems architecture featuring **Twitter Snowflake 64-bit ID generation**, **Base62 compact encoding**, **Murmur3 Consistent Hashing with virtual nodes**, **Anti-Stampede Cache-Aside with Redis mutex locks**, and an **asynchronous click telemetry pipeline**.
 
-Zero friction: Runs **100% natively without Docker** for local development and can be deployed entirely on **$0 free-tier cloud platforms**.
+Zero friction: Runs **100% natively without Docker** for local development, deploys as a **13-container distributed cluster**, and offers **live GitHub Pages demo** and **GitHub Actions CI/CD**.
 
 ---
 
@@ -20,7 +21,7 @@ Zero friction: Runs **100% natively without Docker** for local development and c
 1. **Snowflake Distributed ID Generation**
    - 64-bit time-ordered unique IDs (`41 bits timestamp | 10 bits machine/node ID | 12 bits sequence`).
    - Generates up to **4,096 unique IDs per millisecond per node** (~4.19M IDs/sec) with zero database coordination or roundtrips.
-   - Encoded into 7-character Base62 alphanumeric short codes (`[0-9a-zA-Z]`).
+   - Encoded into compact 5-character Base62 alphanumeric short codes (`[0-9a-zA-Z]`) with dynamic length configurability.
 
 2. **Murmur3 Consistent Hash Ring with 150 Virtual Nodes**
    - Uniform key distribution across independent database shards with minimum data movement during rebalancing ($K/N$ rehash ratio).
